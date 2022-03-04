@@ -4,6 +4,8 @@ from flask import render_template
 from flaskApp import db, auth, blog, simple_pages
 from flaskApp.context_processors import utility_text_processors
 
+from werkzeug.exceptions import InternalServerError, NotFound
+
 
 def create_app(test_config=None):
     """Create and configure an instance of the Flask application."""
@@ -54,8 +56,8 @@ def create_app(test_config=None):
 app = create_app()
 
 
-@app.errorhandler(404)
+@app.errorhandler(NotFound)
 # inbuilt function which takes error as parameter
 def not_found(e):
     # defining function
-    return render_template("404.html"), 404
+    return render_template("404.html")
