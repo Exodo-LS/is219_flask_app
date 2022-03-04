@@ -4,6 +4,7 @@ from flask import render_template
 from flaskApp import db, auth, blog, simple_pages
 from flaskApp.context_processors import utility_text_processors
 
+
 def create_app(test_config=None):
     """Create and configure an instance of the Flask application."""
     app = Flask(__name__, instance_relative_config=True)
@@ -36,14 +37,13 @@ def create_app(test_config=None):
     app.register_blueprint(blog.bp)
     app.register_blueprint(simple_pages.bp)
 
-
     # make url_for('index') == url_for('blog.index')
     # in another app, you might define a separate main index here with
     # app.route, while giving the blog blueprint a url_prefix, but for
     # the tutorial the blog will be the main index
     app.add_url_rule("/", endpoint="index")
     app.context_processor(utility_text_processors)
-
+    app.register_error_handler(404, not_found)
 
     if __name__ == '__main__':
         port = int(os.environ.get("PORT", 5000))
@@ -52,6 +52,7 @@ def create_app(test_config=None):
 
 
 app = create_app()
+
 
 @app.errorhandler(404)
 # inbuilt function which takes error as parameter
