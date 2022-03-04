@@ -45,7 +45,6 @@ def create_app(test_config=None):
     # the tutorial the blog will be the main index
     app.add_url_rule("/", endpoint="index")
     app.context_processor(utility_text_processors)
-    app.register_error_handler(404, not_found)
 
     if __name__ == '__main__':
         port = int(os.environ.get("PORT", 5000))
