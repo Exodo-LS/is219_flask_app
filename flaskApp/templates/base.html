@@ -32,6 +32,9 @@
                         {{ render_nav_item('index', 'Home') }}
                         {{ render_nav_item('simple_pages.show','About', page="about" ) }}
                         {{ render_nav_item('simple_pages.show','Welcome', page="welcome" ) }}
+                        {% if g.user %}
+                            {{ render_nav_item('blog.create','Create', page="create" ) }}
+                        {% endif %}
                     </div>
                 </div>
                 <div class="navbar-nav d-flex">
