@@ -5,7 +5,7 @@ bp = Blueprint('simple_pages', __name__,
                template_folder='templates', static_folder='static')
 
 
-@bp.route('/<page>')
+@bp.route('/page/<page>')
 def show(page):
     try:
         return render_template('%s.html' % page)
