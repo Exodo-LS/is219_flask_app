@@ -2,7 +2,6 @@
 <html lang="en">
 <head>
     {% block head %}
-        <!-- Required meta tags -->
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
@@ -11,7 +10,7 @@
             {{ bootstrap.load_css() }}
         {% endblock %}
 
-        <title>My Site - {% block title %}{% endblock %}</title>
+        <title>{% block title %}{% endblock %} - Flaskr</title>
     {% endblock %}
 </head>
 <body>
@@ -54,7 +53,6 @@
                 </nav>
             </div>
         {% endif %}
-
     </div>
     <!-- Your page content -->
     <div class="row">
@@ -63,7 +61,6 @@
         {% endblock %}
     </div>
 </div>
-
 {% block scripts %}
     <!-- Optional JavaScript -->
     {{ bootstrap.load_js() }}
