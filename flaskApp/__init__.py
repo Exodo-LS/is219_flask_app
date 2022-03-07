@@ -43,7 +43,7 @@ def create_app(test_config=None):
     app.register_blueprint(blog.bp)
     app.register_blueprint(simple_pages.bp)
     bootstrap = Bootstrap5(app)
-    app.config['BOOTSTRAP_BOOTSWATCH_THEME'] = 'sketchy'
+    app.config['BOOTSTRAP_BOOTSWATCH_THEME'] = 'quartz'
     app.register_error_handler(404, page_not_found)
 
     # make url_for('index') == url_for('blog.index')
