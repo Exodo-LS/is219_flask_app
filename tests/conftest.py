@@ -1,61 +1,27 @@
-import os
-import tempfile
+"""This makes the test configuration setup"""
+# pylint: disable=redefined-outer-name
 
 import pytest
-from flaskApp import create_app
-from flaskApp.db import get_db
-from flaskApp.db import init_db
-
-# read in SQL for populating test data
-with open(os.path.join(os.path.dirname(__file__), "data.sql"), "rb") as f:
-    _data_sql = f.read().decode("utf8")
+from app import create_app
 
 
-@pytest.fixture
-def app():
-    """Create and configure a new app instance for each test."""
-    # create a temporary file to isolate the database for each test
-    db_fd, db_path = tempfile.mkstemp()
-    # create the app with common test config
-    app = create_app({"TESTING": True, "DATABASE": db_path})
-
-    # create the database and load test data
-    with app.app_context():
-        init_db()
-        get_db().executescript(_data_sql)
-
-    yield app
-
-    # close and remove the temporary database
-    os.close(db_fd)
-    os.unlink(db_path)
+@pytest.fixture()
+def application():
+    """This makes the app"""
+    application = create_app()
+    application.config.update({
+        "TESTING": True,
+    })
+    yield application
 
 
-@pytest.fixture
-def client(app):
-    """A test client for the app."""
-    return app.test_client()
+@pytest.fixture()
+def client(application):
+    """This makes the http client"""
+    return application.test_client()
 
 
-@pytest.fixture
-def runner(app):
-    """A test runner for the app's Click commands."""
-    return app.test_cli_runner()
-
-
-class AuthActions:
-    def __init__(self, client):
-        self._client = client
-
-    def login(self, username="test", password="test"):
-        return self._client.post(
-            "/auth/login", data={"username": username, "password": password}
-        )
-
-    def logout(self):
-        return self._client.get("/auth/logout")
-
-
-@pytest.fixture
-def auth(client):
-    return AuthActions(client)
+@pytest.fixture()
+def runner(application):
+    """This makes the task runner"""
+    return application.test_cli_runner()
