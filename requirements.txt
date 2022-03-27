@@ -10,3 +10,8 @@ uwsgi
 Jinja2
 Werkzeug
 bootstrap-flask
+Flask-WTF
+flask_sqlalchemy
+flask-login
+bcrypt
+email_validator

@@ -1,69 +1,119 @@
 import pytest
-from flask import g
-from flask import session
-
-from flaskApp.db import get_db
+from app.db.models import User
 
 
-def test_register(client, app):
-    # test that viewing the page renders without template errors
-    assert client.get("/auth/register").status_code == 200
-
-    # test that successful registration redirects to the login page
-    response = client.post("/auth/register", data={"username": "a", "password": "a"})
-    assert "http://localhost/auth/login" == response.headers["Location"]
-
-    # test that the user was inserted into the database
-    with app.app_context():
-        assert (
-            get_db().execute("SELECT * FROM user WHERE username = 'a'").fetchone()
-            is not None
-        )
+def test_request_main_menu_links(client):
+    """This makes the index page"""
+    response = client.get("/")
+    assert response.status_code == 200
+    assert b'href="/login"' in response.data
+    assert b'href="/register"' in response.data
 
 
-@pytest.mark.parametrize(
-    ("username", "password", "message"),
-    (
-        ("", "", b"Username is required."),
-        ("a", "", b"Password is required."),
-        ("test", "test", b"already registered"),
-    ),
-)
-def test_register_validate_input(client, username, password, message):
-    response = client.post(
-        "/auth/register", data={"username": username, "password": password}
-    )
-    assert message in response.data
+def test_auth_pages(client):
+    """This makes the index page"""
+    response = client.get("/dashboard")
+    assert response.status_code == 302
+    response = client.get("/register")
+    assert response.status_code == 200
+    response = client.get("/login")
+    assert response.status_code == 200
 
 
-def test_login(client, auth):
-    # test that viewing the page renders without template errors
-    assert client.get("/auth/login").status_code == 200
-
-    # test that successful login redirects to the index page
-    response = auth.login()
-    assert response.headers["Location"] == "http://localhost/"
-
-    # login request set the user_id in the session
-    # check that the user is loaded from the session
-    with client:
-        client.get("/")
-        assert session["user_id"] == 1
-        assert g.user["username"] == "test"
+# Project 2 Unit Tests:
+# Unit Test 1 - Bad password (Login)
+def test_invalid_password(client):
+    """ Unit Test for Incorrect Password for Login """
+    response = client.get("/login")
+    test_user = 'IS219_TestUser@email.com'
+    test_password = 'invalid_password'
+    if User.email == test_user:
+        if test_password != User.password:
+            assert 'Invalid password' in response.data
 
 
-@pytest.mark.parametrize(
-    ("username", "password", "message"),
-    (("a", "test", b"Incorrect username."), ("test", "a", b"Incorrect password.")),
-)
-def test_login_validate_input(auth, username, password, message):
-    response = auth.login(username, password)
-    assert message in response.data
+# Unit Test 2 - Bad username / email  (login)
+def test_invalid_email_address(client):
+    """ Unit Test for Incorrect Email for Login"""
+    response = client.get("/login")
+    if User.email is None:
+        assert 'Invalid username' in response.data
 
 
-def test_logout(client, auth):
-    auth.login()
+# Unit Test 3 - Bad username / email (Registration)
+def test_invalid_email_address_register(client):
+    """ Unit Test for Invalid Email for Registration"""
+    response = client.get("/register")
+    test_email = 'test'
+    if User.email is None:
+        User.email = test_email
+        if '@' not in User.email:
+            assert 'Please include an '@' in the email address'
 
-    with client:
-        auth.logout()
-        assert "user_id" not in session
+
+# Unit Test 4 - Password Confirmation (registration)
+def test_password_confirmation(client):
+    """ Unit Test for Password Confirmation"""
+    response = client.get("/register")
+    test_password = 'Dummy_Pass_123'
+    if User.email is not None:
+        if User.password == test_password:
+            assert 'Congratulations, you are now a registered user!' in response.data
+
+
+# Unit Test 5 - Bad Password - does not meet criteria (registration)
+def test_invalid_password_registration(client):
+    """ Unit Test for Password Criteria Check"""
+    response = client.get("/register")
+    test_pass = 'bad'
+    if User.email is None:
+        User.password = test_pass
+        if len(User.password) < 6 or len(User.password) > 35:
+            assert 'Please lengthen this text to 6 characters or more' in response.data
+
+
+# Unit 6 - Already Registered (Registration)
+def test_already_registered(client):
+    """ Unit Test for Already Registered"""
+    response = client.get("/register")
+    test_user = 'IS219_TestUser@email.com'
+    if User.email is not None and User.email == test_user:
+        assert 'Already Registered' in response.data
+
+
+# Unit Test 7 - Successful Login
+def test_successful_login(client):
+    """ Unit Test for Successful Login"""
+    response = client.get("/login")
+    test_user = 'IS219_TestUser@email.com'
+    test_password = 'Dummy_Pass_123'
+    if User.email == test_user:
+        if User.password == test_password:
+            assert 'Login Successful' in response.data
+
+
+# Unit Test 8 - Successful Registration
+def test_successful_registration(client):
+    """ Unit Test for Successful Registration"""
+    response = client.get("/register")
+    if User is None:
+        assert 'Congratulations, you are now a registered user!' in response.data
+
+
+# Unit Test 9 - denying access to the dashboard for logged out users
+def test_deny_dashboard(client):
+    """ Unit Test for Denying Access to Dashboard"""
+    response = client.get("/dashboard")
+    if not User.authenticated:
+        assert 'User Not Authenticated' in response.data
+
+
+# Unit Test 10 - allowing access to the dashboard for logged in users
+def test_allow_dashboard(client):
+    """ Unit Test for Allowing Access to Dashboard"""
+    response = client.get("/dashboard")
+    test_user = 'IS219_TestUser@email.com'
+    test_password = 'Dummy_Pass_123'
+    if User.email == test_user and User.password == test_password:
+        if User.authenticated:
+            assert 'User Authenticated' in response.data
