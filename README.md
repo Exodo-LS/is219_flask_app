@@ -1,4 +1,4 @@
-# Project Setup
+# NJIT IS219 Flask App
 
 [![Production Workflow](https://github.com/Exodo-LS/is219_flask_app/actions/workflows/prod.yml/badge.svg)](https://github.com/Exodo-LS/is219_flask_app/actions/workflows/prod.yml)
 
