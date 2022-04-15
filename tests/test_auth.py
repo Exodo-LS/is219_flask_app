@@ -48,7 +48,7 @@ def test_invalid_email_address_register(client):
     if User.email is None:
         User.email = test_email
         if '@' not in User.email:
-            assert 'Please include an '@' in the email address'
+            assert 'Please include an '@' in the email address' in response.data
 
 
 # Unit Test 4 - Password Confirmation (registration)
