@@ -1,0 +1,2 @@
+INFO, GET, /, method: GET,  path: /,  status: 200,  duration: 0.13,  time: 2022-04-15T16:19:58Z,  ip: 172.25.0.1,  host: localhost,  params: {}, 
+INFO, GET, /register, method: GET,  path: /register,  status: 200,  duration: 0.02,  time: 2022-04-15T16:20:39Z,  ip: 172.25.0.1,  host: localhost,  params: {}, 
