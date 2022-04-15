@@ -9,7 +9,7 @@
         </div>
         <div id="message" class="col-5">
             <div id="letter" class="red">
-                Has lower case letter
+                Requirements Met:
                 <div class="progress">
                     <div id="p-bar" class="progress-bar" style="width: 0%" role="progressbar" aria-valuenow="0"
                          aria-valuemin="0" aria-valuemax="100"></div>
@@ -36,6 +36,7 @@
         let upperCase = new Observable(0);
         let specialCharacter = new Observable(0);
         let passwordLength = new Observable(0);
+        let numberCase = new Observable(0);
 
         let id = "p-bar";
 
@@ -81,36 +82,45 @@
         lowerCase.onChange(function (v) {
 
             if(v === 0) {
-                setProgressBarWidth(id,-25)
+                setProgressBarWidth(id,-20)
             } else {
-                setProgressBarWidth(id,+25)
+                setProgressBarWidth(id,+20)
             }
         });
 
         passwordLength.onChange(function (v) {
 
             if(v === 0) {
-                setProgressBarWidth(id,-25)
+                setProgressBarWidth(id,-20)
             } else {
-                setProgressBarWidth(id,+25)
+                setProgressBarWidth(id,+20)
             }
         });
 
         upperCase.onChange(function (v) {
 
             if(v === 0) {
-                setProgressBarWidth(id,-25)
+                setProgressBarWidth(id,-20)
             } else {
-                setProgressBarWidth(id,+25)
+                setProgressBarWidth(id,+20)
             }
         });
 
         specialCharacter.onChange(function (v) {
 
             if(v === 0) {
-                setProgressBarWidth(id,-25)
+                setProgressBarWidth(id,-20)
             } else {
-                setProgressBarWidth(id,+25)
+                setProgressBarWidth(id,+20)
+            }
+        });
+
+        numberCase.onChange(function (v) {
+
+            if(v === 0) {
+                setProgressBarWidth(id,-20)
+            } else {
+                setProgressBarWidth(id,+20)
             }
         });
 
@@ -121,8 +131,10 @@
             let upperCaseLetters = /[A-Z]/g;
             let specialCharacters = /[`~!@#$%^&*()_|+\-=?;:'",.<>\{\}\[\]\\\/]/gi;
             let passwordMinLength = 6;
+            let passwordMaxLength = 35
+            let numbers = /[0-9]/g;
 
-            if(passwordField.value.length >= passwordMinLength) {
+            if(passwordField.value.length >= passwordMinLength && passwordField.value.length <= passwordMaxLength) {
                 passwordLength.setValue(1);
             } else {
                 passwordLength.setValue(0);
@@ -143,7 +155,11 @@
             } else {
                 specialCharacter.setValue(0);
             }
-
+            if (passwordField.value.match(numbers)) {
+                numberCase.setValue(1)
+            } else {
+                numberCase.setValue(0)
+            }
         }
 
 
