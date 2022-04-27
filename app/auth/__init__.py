@@ -1,33 +1,17 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
-from app.auth.decorators import admin_required
+import logging
+
+from flask import Blueprint, render_template, redirect, url_for, flash, current_app, abort
 from flask_login import login_user, login_required, logout_user, current_user
+from jinja2 import TemplateNotFound
+from sqlalchemy import select
 from werkzeug.security import generate_password_hash
-from app.auth.forms import login_form, register_form, profile_form, security_form, user_edit_form
+
+from app.auth.decorators import admin_required
+from app.auth.forms import login_form, register_form, profile_form, security_form, user_edit_form, create_user_form
 from app.db import db
-from app.db.models import User
+from app.db.models import User, Location, location_user
 
 auth = Blueprint('auth', __name__, template_folder='templates')
-from flask import current_app
-
-
-@auth.route('/login', methods=['POST', 'GET'])
-def login():
-    form = login_form()
-    if current_user.is_authenticated:
-        return redirect(url_for('auth.dashboard'))
-    if form.validate_on_submit():
-        user = User.query.filter_by(email=form.email.data).first()
-        if user is None or not user.check_password(form.password.data):
-            flash('Invalid username or password')
-            return redirect(url_for('auth.login'))
-        else:
-            user.authenticated = True
-            db.session.add(user)
-            db.session.commit()
-            login_user(user)
-            flash("Welcome", 'success')
-            return redirect(url_for('auth.dashboard'))
-    return render_template('login.html', form=form)
 
 
 @auth.route('/register', methods=['POST', 'GET'])
@@ -52,12 +36,24 @@ def register():
             return redirect(url_for('auth.login'), 302)
     return render_template('register.html', form=form)
 
-
-@auth.route('/dashboard')
-@login_required
-def dashboard():
-    return render_template('dashboard.html')
-
+@auth.route('/login', methods=['POST', 'GET'])
+def login():
+    form = login_form()
+    if current_user.is_authenticated:
+        return redirect(url_for('auth.dashboard'))
+    if form.validate_on_submit():
+        user = User.query.filter_by(email=form.email.data).first()
+        if user is None or not user.check_password(form.password.data):
+            flash('Invalid username or password')
+            return redirect(url_for('auth.login'))
+        else:
+            user.authenticated = True
+            db.session.add(user)
+            db.session.commit()
+            login_user(user)
+            flash("Welcome", 'success')
+            return redirect(url_for('auth.dashboard'))
+    return render_template('login.html', form=form)
 
 @auth.route("/logout")
 @login_required
@@ -70,6 +66,60 @@ def logout():
     logout_user()
     return redirect(url_for('auth.login'))
 
+
+
+
+
+@auth.route('/dashboard', methods=['GET'], defaults={"page": 1})
+@auth.route('/dashboard/<int:page>', methods=['GET'])
+@login_required
+def dashboard(page):
+    page = page
+    per_page = 1000
+    #pagination = Location.query.filter_by(users=current_user.id).paginate(page, per_page, error_out=False)
+    #pagination = Location.query.all(users=current_user.id).paginate(page, per_page, error_out=False)
+
+    #pagination = db.session.query(Location, User).filter(location_user.location_id == Location.id,
+            #                                   location_user.user_id == User.id).order_by(Location.location_id).all()
+
+    #pagination = User.query.join(location_user).filter(location_user.user_id == current_user.id).paginate()
+
+    data = Location.query.all()
+
+    try:
+        return render_template('dashboard.html',data=data)
+    except TemplateNotFound:
+        abort(404)
+
+@auth.route('/profile', methods=['POST', 'GET'])
+def edit_profile():
+    user = User.query.get(current_user.get_id())
+    form = profile_form(obj=user)
+    if form.validate_on_submit():
+        user.about = form.about.data
+        db.session.add(current_user)
+        db.session.commit()
+        flash('You Successfully Updated your Profile', 'success')
+        return redirect(url_for('auth.dashboard'))
+    return render_template('profile_edit.html', form=form)
+
+
+@auth.route('/account', methods=['POST', 'GET'])
+def edit_account():
+    user = User.query.get(current_user.get_id())
+    form = security_form(obj=user)
+    if form.validate_on_submit():
+        user.email = form.email.data
+        user.password = form.password.data
+        db.session.add(current_user)
+        db.session.commit()
+        flash('You Successfully Updated your Password or Email', 'success')
+        return redirect(url_for('auth.dashboard'))
+    return render_template('manage_account.html', form=form)
+
+
+
+#You should probably move these to a new Blueprint to clean this up.  These functions below are for user management
 
 @auth.route('/users')
 @login_required
@@ -114,11 +164,11 @@ def edit_user(user_id):
 @auth.route('/users/new', methods=['POST', 'GET'])
 @login_required
 def add_user():
-    form = register_form()
+    form = create_user_form()
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
         if user is None:
-            user = User(email=form.email.data, password=generate_password_hash(form.password.data))
+            user = User(email=form.email.data, password=generate_password_hash(form.password.data), is_admin=int(form.is_admin.data))
             db.session.add(user)
             db.session.commit()
             flash('Congratulations, you just created a user', 'success')
@@ -140,30 +190,3 @@ def delete_user(user_id):
     db.session.commit()
     flash('User Deleted', 'success')
     return redirect(url_for('auth.browse_users'), 302)
-
-
-@auth.route('/profile', methods=['POST', 'GET'])
-def edit_profile():
-    user = User.query.get(current_user.get_id())
-    form = profile_form(obj=user)
-    if form.validate_on_submit():
-        user.about = form.about.data
-        db.session.add(current_user)
-        db.session.commit()
-        flash('You Successfully Updated your Profile', 'success')
-        return redirect(url_for('auth.dashboard'))
-    return render_template('profile_edit.html', form=form)
-
-
-@auth.route('/account', methods=['POST', 'GET'])
-def edit_account():
-    user = User.query.get(current_user.get_id())
-    form = security_form(obj=user)
-    if form.validate_on_submit():
-        user.email = form.email.data
-        user.password = form.password.data
-        db.session.add(current_user)
-        db.session.commit()
-        flash('You Successfully Updated your Password or Email', 'success')
-        return redirect(url_for('auth.dashboard'))
-    return render_template('manage_account.html', form=form)
