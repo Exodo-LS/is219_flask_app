@@ -3,7 +3,7 @@ import json
 import logging
 import os
 
-from flask import Blueprint, render_template, abort, url_for, current_app, jsonify
+from flask import Blueprint, render_template, abort, url_for, current_app, jsonify, flash
 from flask_login import current_user, login_required
 from jinja2 import TemplateNotFound
 
@@ -85,3 +85,47 @@ def location_upload():
         return render_template('upload_locations.html', form=form)
     except TemplateNotFound:
         abort(404)
+
+
+@map.route('/locations/new', methods=['POST', "GET"])
+@login_required
+def add_location():
+    form = location_form()
+    if form.validate_on_submit():
+        location = Location(title=form.title.data, longitude=form.longitude.data, latitude=form.latitude.data,
+                            population=form.population.data)
+        db.session.add(location)
+        db.session.commit()
+        flash('Added new location', 'success')
+        return redirect(url_for('map.browse_locations'))
+
+    return render_template("location_new.html", form=form)
+
+
+@map.route('/locations/<int:location_id>/edit', methods=['POST', "GET"])
+@login_required
+def edit_location(location_id):
+    location = Location.query.get(location_id)
+    form = location_form(obj=location)
+    if form.validate_on_submit():
+        db.session.delete(location)  # delete old location
+
+        # create and add new location to db
+        location = Location(title=form.title.data, longitude=form.longitude.data, latitude=form.latitude.data,
+                            population=form.population.data)
+        db.session.add(location)
+        db.session.commit()
+        flash('Location edited successfully', 'success')
+        return redirect(url_for("map.browse_locations"))
+
+    return render_template("location_new.html", form=form)
+
+
+@map.route('/locations/<int:location_id>/delete', methods=['POST'])
+@login_required
+def delete_location(location_id):
+    location = Location.query.get(location_id)
+    db.session.delete(location)
+    db.session.commit()
+    flash('Location Deleted', 'success')
+    return redirect(url_for('map.browse_locations'), 302)
