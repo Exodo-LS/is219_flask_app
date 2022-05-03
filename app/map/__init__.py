@@ -86,18 +86,21 @@ def location_upload():
     except TemplateNotFound:
         abort(404)
 
+
 @map.route('/locations/new', methods=['POST', "GET"])
 @login_required
 def add_location():
     form = location_form()
     if form.validate_on_submit():
-        location = Location(title=form.title.data, longitude=form.longitude.data, latitude=form.latitude.data, population=form.population.data)
+        location = Location(title=form.title.data, longitude=form.longitude.data, latitude=form.latitude.data,
+                            population=form.population.data)
         db.session.add(location)
         db.session.commit()
         flash('Added new location', 'success')
         return redirect(url_for('map.browse_locations'))
 
     return render_template("location_new.html", form=form)
+
 
 @map.route('/locations/<int:location_id>/edit', methods=['POST', "GET"])
 @login_required
