@@ -1,5 +1,4 @@
 import csv
-import json
 import logging
 import os
 
@@ -9,9 +8,9 @@ from jinja2 import TemplateNotFound
 
 from app.db import db
 from app.db.models import Location
-from app.map.forms import csv_upload
+from app.map.forms.csv_form import csv_upload
+from app.map.forms.crud_form import location_form
 from werkzeug.utils import secure_filename, redirect
-from flask import Response
 
 map = Blueprint('map', __name__,
                 template_folder='templates')
@@ -24,8 +23,12 @@ def browse_locations(page):
     per_page = 10
     pagination = Location.query.paginate(page, per_page, error_out=False)
     data = pagination.items
+    add_url = url_for("map.add_location")
+    edit_url = ("map.edit_location", [("location_id", ":id")])
+    delete_url = ('map.delete_location', [('location_id', ':id')])
     try:
-        return render_template('browse_locations.html', data=data, pagination=pagination)
+        return render_template('browse_locations.html', data=data, pagination=pagination, add_url=add_url,
+                               edit_url=edit_url, delete_url=delete_url, Location=Location)
     except TemplateNotFound:
         abort(404)
 
@@ -42,9 +45,11 @@ def browse_locations_datatables():
 
 @map.route('/api/locations/', methods=['GET'])
 def api_locations():
-    data = Location.query.all()
+    # data = current_user.locations  # get list of user owned locations
+    data = Location.query.all()  # get list of ALL locations
+    data = jsonify(data=[location.serialize() for location in data])
     try:
-        return jsonify(data=[location.serialize() for location in data])
+        return data
     except TemplateNotFound:
         abort(404)
 
@@ -52,6 +57,8 @@ def api_locations():
 @map.route('/locations/map', methods=['GET'])
 def map_locations():
     google_api_key = current_app.config.get('GOOGLE_API_KEY')
+    log = logging.getLogger("myApp")
+    log.info(google_api_key)
     try:
         return render_template('map_locations.html', google_api_key=google_api_key)
     except TemplateNotFound:
@@ -61,7 +68,7 @@ def map_locations():
 @map.route('/locations/upload', methods=['POST', 'GET'])
 @login_required
 def location_upload():
-    form = csv_upload()
+    form= csv_upload()
     if form.validate_on_submit():
         filename = secure_filename(form.file.data.filename)
         filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
@@ -69,12 +76,9 @@ def location_upload():
         list_of_locations = []
         with open(filepath) as file:
             csv_file = csv.DictReader(file)
-            list_of_locations = []
             for row in csv_file:
-                location = Location.query.filter_by(title=row['location']).first()
-                if location is None:
-                    list_of_locations.append(
-                        Location(row['location'], row['longitude'], row['latitude'], row['population']))
+                list_of_locations.append(
+                    Location(row['location'], row['longitude'], row['latitude'], row['population']))
 
         current_user.locations = list_of_locations
         db.session.commit()
