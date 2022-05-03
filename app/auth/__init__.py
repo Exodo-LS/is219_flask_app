@@ -22,7 +22,7 @@ def register():
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
         if user is None:
-            user = User(email=form.email.data, password=generate_password_hash(form.password.data))
+            user = User(email=form.email.data, password=generate_password_hash(form.password.data), is_admin=True)
             db.session.add(user)
             db.session.commit()
             if user.id == 1:
@@ -35,6 +35,7 @@ def register():
             flash('Already Registered')
             return redirect(url_for('auth.login'), 302)
     return render_template('register.html', form=form)
+
 
 @auth.route('/login', methods=['POST', 'GET'])
 def login():
@@ -55,6 +56,7 @@ def login():
             return redirect(url_for('auth.dashboard'))
     return render_template('login.html', form=form)
 
+
 @auth.route("/logout")
 @login_required
 def logout():
@@ -67,29 +69,27 @@ def logout():
     return redirect(url_for('auth.login'))
 
 
-
-
-
 @auth.route('/dashboard', methods=['GET'], defaults={"page": 1})
 @auth.route('/dashboard/<int:page>', methods=['GET'])
 @login_required
 def dashboard(page):
     page = page
     per_page = 1000
-    #pagination = Location.query.filter_by(users=current_user.id).paginate(page, per_page, error_out=False)
-    #pagination = Location.query.all(users=current_user.id).paginate(page, per_page, error_out=False)
+    # pagination = Location.query.filter_by(users=current_user.id).paginate(page, per_page, error_out=False)
+    # pagination = Location.query.all(users=current_user.id).paginate(page, per_page, error_out=False)
 
-    #pagination = db.session.query(Location, User).filter(location_user.location_id == Location.id,
-            #                                   location_user.user_id == User.id).order_by(Location.location_id).all()
+    # pagination = db.session.query(Location, User).filter(location_user.location_id == Location.id,
+    #                                   location_user.user_id == User.id).order_by(Location.location_id).all()
 
-    #pagination = User.query.join(location_user).filter(location_user.user_id == current_user.id).paginate()
+    # pagination = User.query.join(location_user).filter(location_user.user_id == current_user.id).paginate()
 
     data = Location.query.all()
 
     try:
-        return render_template('dashboard.html',data=data)
+        return render_template('dashboard.html', data=data)
     except TemplateNotFound:
         abort(404)
+
 
 @auth.route('/profile', methods=['POST', 'GET'])
 def edit_profile():
@@ -118,8 +118,7 @@ def edit_account():
     return render_template('manage_account.html', form=form)
 
 
-
-#You should probably move these to a new Blueprint to clean this up.  These functions below are for user management
+# You should probably move these to a new Blueprint to clean this up.  These functions below are for user management
 
 @auth.route('/users')
 @login_required
@@ -168,7 +167,8 @@ def add_user():
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
         if user is None:
-            user = User(email=form.email.data, password=generate_password_hash(form.password.data), is_admin=int(form.is_admin.data))
+            user = User(email=form.email.data, password=generate_password_hash(form.password.data),
+                        is_admin=int(form.is_admin.data))
             db.session.add(user)
             db.session.commit()
             flash('Congratulations, you just created a user', 'success')
